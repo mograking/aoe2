@@ -1,4 +1,5 @@
 import websocket
+import logging
 import aoe2database
 import json
 import base64
@@ -7,7 +8,7 @@ import time
 import rel
 from statistics import mean
 
-def extractRunningAverage(k, limit=10):
+def extractRunningAverage(k, limit=20):
     c = str(k['data']['player']['id'])
     print(c)
     suma = 0
@@ -16,19 +17,22 @@ def extractRunningAverage(k, limit=10):
             for i in range(-1, -limit-1, -1):
                 suma += x['data'][i][c] 
             break
-    b = suma/limit
+    b = suma/limit #mean
     return b
-    a = list(filter(lambda x: x['name']=='1v1 Random Map', k['data']['ratings']))[0]['data'][:-limit:-1]
-    b = mean([x[c] for x in a])
-    return b
+
+def extractHighestElo(k):
+    for x in k['data']['ladders']:
+        if x['name'] == '1v1 Random Map':
+            return x['highest']
+    return -1
 
 def on_message(ws, message):
     jdata = json.loads(message)
     if jdata['cls']==13:
         profile_id = jdata['data']['player']['id']
         running_average = extractRunningAverage(jdata)
-        print(str(profile_id) + ' ' + str(running_average))
-        aoe2database.updateRunningAvg(str(profile_id),running_average)
+        highest_elo = extractHighestElo(jdata)
+        aoe2database.updateGeneralMany( { aoe2database.PID : str(profile_id) } , { aoe2database.RAV : int(running_average) , aoe2database.HEL : int(highest_elo) } )
 
 def on_error(ws, error):
     pass
@@ -55,5 +59,9 @@ def OpenWebSocket(profile_ids):
     rel.signal(2, rel.abort)  # Keyboard Interrupt
     rel.dispatch()
 
-ws = OpenWebSocket(aoe2database.getListOfAllIds())
+logging.basicConfig(filename='wssRecs.log', encoding='utf-8', level=logging.INFO)
+
+if __name__=='__main__':
+    logging.debug('updating running avg')
+    ws = OpenWebSocket(aoe2database.getListOfAllIds())
 
