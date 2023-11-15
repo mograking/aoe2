@@ -1,8 +1,11 @@
 import os
+import asyncio
+import threading
 import json
 import sys
 import logging
 from pymongo import MongoClient
+import time
 import requests
 import urllib
 from pymongo.server_api import ServerApi
@@ -41,14 +44,49 @@ def getELORelicString(relicId):
         pass
     return "NA"
 
+
+def getMatchesOne(relicId, lastMatchId, discordId):
+    r = requests.get('https://data.aoe2companion.com/api/matches?profile_ids='+relicId+'&search=&leaderboard_ids=&page=1').json()
+    try:
+        asyncio.run(client.get_user(440491679523274752).send('this is working'))
+        if 'matches' in r and len(r['matches'])>0 and not r['matches'][0]['finished']:
+            lm = r['matches'][0]
+            if lastMatchId==-1 or lastMatchId != lm['matchId']:
+                ella.update_one({'relicId':relicId}, {'$set':{'lastMatchId':lm['matchId']}})
+                emb = discord.Embed(title=lm['name'])
+                for t in lm['teams']:
+                    for p in t['players']:
+                        emb.add_field(name= p['name'], value = getELORelicString(p['profileId']), inline = False )
+                print('Notifying :', relicId)
+                asyncio.run(client.get_user(discordId).send(embed=emb))
+    except KeyError as exc:
+        pass
+    except IndexError as exc:
+        pass
+
+@tasks.loop(seconds=30)
+async def getMatchesMulti():
+    starttime=time.time()
+    threadPool=[]
+    for i in ella.find({'subscribed':'true'}):
+        threadPool += [ threading.Thread(target=getMatchesOne, args=(i['relicId'], -1 if 'lastMatchId' not in i else i['lastMatchId'], i['discordId'], ) ) ]
+    for i in range(len(threadPool)):
+        threadPool[i].start()
+    for i in range(len(threadPool)):
+        threadPool[i].join()
+    endtime=time.time()
+    print('multi took '+ str(endtime-starttime))
+    return
+
 @tasks.loop(seconds=30)
 async def getMatches():
+    starttime=time.time()
     for i in ella.find({'subscribed':'true'}):
         r = requests.get('https://data.aoe2companion.com/api/matches?profile_ids='+i['relicId'] +'&search=&leaderboard_ids=&page=1').json()
         try:
             if 'matches' in r and len(r['matches'])>0 and not r['matches'][0]['finished']:
                 lm = r['matches'][0]
-                if not ella.find_one({'relicId':i['relicId'], 'lastMatchId':lm['matchId']}):
+                if 'lastMatchId' not in i or i['lastMatchId'] != lm['matchId']:
                     ella.update_one({'relicId':i['relicId']}, {'$set':{'lastMatchId':lm['matchId']}})
                     emb = discord.Embed(title=lm['name'])
                     for t in lm['teams']:
@@ -58,6 +96,8 @@ async def getMatches():
                     await client.get_user(i['discordId']).send(embed=emb)
         except Exception as exc:
             pass
+    endtime=time.time()
+    print('single took '+ str(starttime-endtime))
 
 
 
@@ -82,6 +122,7 @@ async def on_ready():
     print(f'We have logged in as {client.user}')
     #notifyTracked.start()
     getMatches.start()
+    #getMatchesMulti.start()
 
 @client.event
 async def on_message(message):
