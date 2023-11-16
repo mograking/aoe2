@@ -80,7 +80,6 @@ async def getMatchesMulti():
 
 @tasks.loop(seconds=30)
 async def getMatches():
-    starttime=time.time()
     for i in ella.find({'subscribed':'true'}):
         r = requests.get('https://data.aoe2companion.com/api/matches?profile_ids='+i['relicId'] +'&search=&leaderboard_ids=&page=1').json()
         try:
@@ -96,10 +95,6 @@ async def getMatches():
                     await client.get_user(i['discordId']).send(embed=emb)
         except Exception as exc:
             pass
-    endtime=time.time()
-    print('single took '+ str(starttime-endtime))
-
-
 
 @tasks.loop(seconds=30)
 async def notifyTracked():
