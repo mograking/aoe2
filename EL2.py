@@ -196,16 +196,13 @@ def registerId( authorId, steamId=-1, relicId =-1):
 
 def updatePersonalStatsGuildWise(guildId):
     list_of_relicIds = [ i['relicId'] for i in ella.find({'guildIds' : {'$in':[guildId]}}) ]
-    print(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds)))
     r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds))).json()
     if r['result']['message'] == 'SUCCESS':
         statG2relicId =dict()
         for x in r['statGroups']:
             statG2relicId[x['id']] = str(x['members'][0]['profile_id'])
-            print(x['members'][0]['alias'])
         for x in r['leaderboardStats']:
             if x['leaderboard_id'] == 3:
-                print( ' {} {} {} '.format(statG2relicId[x['statgroup_id']], x['rating'], x['highestrating']))
                 ella.update_one({'relicId': statG2relicId[x['statgroup_id']]},{'$set':{'elo':x['rating'], 'maxElo' : x['highestrating']}})
     return
 
@@ -353,6 +350,7 @@ async def on_message(message):
         await message.channel.send('Single Thread. Single API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
         return
 
+    #deprecated. use !update.
     if message.content.startswith('!SMupdate'):
         starttime = time.time()
         updatePersonalStatsQuick(str(message.guild.id))
@@ -360,6 +358,7 @@ async def on_message(message):
         await message.channel.send('Single Thread. Multiple API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
         return
 
+    #deprecated. use !update.
     if message.content.startswith('!MMupdate'):
         starttime = time.time()
         updatePersonalStatsMulti(str(message.guild.id))
