@@ -26,15 +26,14 @@ def exceptionHandler(type, value, tb):
 
 sys.excepthook = exceptionHandler
 
-usr = os.getenv('DBUSR')
-pwd = os.getenv('DBPWD')
-
-uri ='mongodb+srv://'+usr+':'+urllib.parse.quote(pwd)+'@cluster0.1ui1r.mongodb.net/?retryWrites=true&w=majority'
-dbclient = MongoClient(uri, server_api=ServerApi('1'))
+#usr = os.getenv('DBUSR')
+#pwd = os.getenv('DBPWD')
+#uri =os.getenv('MONGOFULLURI')
+#dbclient = MongoClient(uri, server_api=ServerApi('1'))
+dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT')))
 ella = dbclient.aoe2bot.ella
 
 client = discord.Client(intents=discord.Intents.all())
-
 
 def customLobbyMenu(author, gameId):
     view = discord.ui.View()
@@ -103,7 +102,7 @@ def displayStats(discordId):
     jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
     if 'profileId' not in jdata:
         emb.description = "Invalid ID?"
-        emb.add_field(name="How to add aoe2 profile:", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>")
+        embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
         return emb
     emb.title = "AoE2 " +jdata['name']
     emb.add_field(name="Profile", value=jdata['profileId'], inline=True)
@@ -114,7 +113,6 @@ def displayStats(discordId):
         emb.add_field(value=str(ldrbrd['rating'])+"-"+str(ldrbrd['maxRating']), name=ldrbrd['leaderboardName'],inline=True)
     emb.add_field(name="Add yours ", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=True)
     return emb
-
 
 def registerId( authorId, steamId=-1, relicId =-1):
     status = StatusCode()
@@ -253,7 +251,6 @@ def removeTracking(discordId):
     status.code = 1
     status.message = 'Removed from subscription list' 
     return status
-    
 
 def getELOTable(guild_id):
     return [ ('-1' if 'name' not in x else x['name'], -1 if 'elo' not in x else x['elo'], -1 if 'maxElo' not in x else x['maxElo'], -1 if 'relicId' not in x else x['relicId']) for x in ella.find({'name':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}}).sort('elo',-1) ]
@@ -359,5 +356,26 @@ async def on_message(message):
     if message.content.startswith('!help'):
         await message.channel.send(view=helpMenu(), embed=discord.Embed(title="Bot Manual", description="Use the buttons to see manual on different features"))
         return
+
+    if message.content.startswith('!dbtest'):
+        db_test_uri =os.getenv('MONGOFULLURI')
+        db_test_dbclient = MongoClient(db_test_uri, server_api=ServerApi('1'))
+        db_test_ella = db_test_dbclient.aoe2bot.ella
+
+        st = time.time()
+        for i in range(10):
+            db_test_ella.find_one({'relicId':'15730812'})
+        et = time.time()
+        print('Remote database 10 find_one queries : {} \n'.format(et-st))
+
+        st = time.time()
+        for i in range(10):
+            ella.find_one({'relicId':'15730812'})
+        et = time.time()
+        print('Local database 10 find_one queries : {} \n'.format(et-st))
+
+        db_test_dbclient.close()
+        return
+
 
 client.run(os.getenv('DISCORD_TOKEN'))

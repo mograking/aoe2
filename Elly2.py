@@ -22,10 +22,12 @@ def exceptionHandler(type, value, tb):
 
 sys.excepthook = exceptionHandler
 
-usr = os.getenv('DBUSR')
-pwd = os.getenv('DBPWD')
-uri ='mongodb+srv://'+usr+':'+urllib.parse.quote(pwd)+'@cluster0.1ui1r.mongodb.net/?retryWrites=true&w=majority'
-dbclient = MongoClient(uri, server_api=ServerApi('1'))
+# usr = os.getenv('DBUSR')
+# pwd = os.getenv('DBPWD')
+# uri ='mongodb+srv://'+usr+':'+urllib.parse.quote(pwd)+'@cluster0.1ui1r.mongodb.net/?retryWrites=true&w=majority'
+# dbclient = MongoClient(uri, server_api=ServerApi('1'))
+
+dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT')))
 ella = dbclient.aoe2bot.ella
 
 TOKEN = os.getenv('ELLY_DISCORD_TOKEN')
@@ -80,6 +82,7 @@ async def getMatchesMulti():
 
 @tasks.loop(seconds=30)
 async def getMatches():
+    st=time.time()
     for i in ella.find({'subscribed':'true'}):
         r = requests.get('https://data.aoe2companion.com/api/matches?profile_ids='+i['relicId'] +'&search=&leaderboard_ids=&page=1').json()
         try:
@@ -95,6 +98,8 @@ async def getMatches():
                     await client.get_user(i['discordId']).send(embed=emb)
         except Exception as exc:
             pass
+    et = time.time()
+    print('Local database (getMatches) took {}'.format(et-st))
 
 @tasks.loop(seconds=30)
 async def notifyTracked():
