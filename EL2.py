@@ -51,6 +51,66 @@ class StatusCode():
             return self.message
         return ""
 
+class StatsMenu(discord.ui.View):
+    def __init__(self, discordId):
+        super().__init__()
+        self.value=None
+        self.discordId=discordId
+        self.player = ella.find_one({'discordId':discordId})
+
+    @discord.ui.button(label="Stats", style=discord.ButtonStyle.blurple)
+    async def personalStats(self, interaction, button):
+        discordId = self.discordId
+        embed = discord.Embed(title="AoE2 Profile")
+        player = self.player
+        if not player:
+            embed.description = "Invalid ID?"
+            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            await interaction.response.edit_message(embed=embed)
+            return
+        jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
+        if 'profileId' not in jdata:
+            embed.description = "Invalid ID?"
+            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            await interaction.response.edit_message(embed=embed)
+            return
+        embed.title = jdata['name']
+        embed.add_field(name="Profile", value=jdata['profileId'], inline=True)
+        embed.add_field(name="Games", value=jdata['games'],inline=True)
+        embed.add_field(name="AoE2Companion", value ="https://www.aoe2companion.com/profile/"+str(jdata['profileId']), inline=False)
+        embed.colour = Colour.random()
+        for ldrbrd in jdata['leaderboards']:
+            embed.add_field(value="{}-{}".format(str(ldrbrd['rating']),str(ldrbrd['maxRating'])), name=ldrbrd['leaderboardName'],inline=False)
+        embed.add_field(name="Add or Change", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=False)
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label="Last Match", style=discord.ButtonStyle.green)
+    async def lastMatchData(self, interaction, button):
+        embed=discord.Embed(title="Last Match")
+        player=self.player
+        if not player:
+            embed.description = "Invalid ID?"
+            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            await interaction.response.edit_message(embed=embed)
+            return
+        jdata = requests.get(apis_.aoe2companionMatches(player['relicId'])).json()
+        if 'matches' not in jdata or len(jdata['matches'])==0:
+            embed.description = "No data"
+            await interaction.response.edit_message(embed=embed)
+            return
+        lastMatch = jdata['matches'][0]
+        embed.add_field(name="Map", value=lastMatch['mapName'],inline=True)
+        embed.add_field(name="Ladder", value=lastMatch['leaderboardId'],inline=True)
+        embed.add_field(name="Mode", value=lastMatch['gameModeName'],inline=False)
+        embed.set_image(url=lastMatch['mapImageUrl'])
+        team_index = 0
+        for team_ in lastMatch['teams']:
+            embed.add_field(name="Team", value=str(team_index), inline=False)
+            team_index += 1
+            for player_ in team_["players"]:
+                embed.add_field(name=player_["name"], value="( {} ) {}".format(player_["rating"], player_["civName"]))
+        await interaction.response.edit_message(embed=embed)
+
 class helpMenu(discord.ui.View):
     def __init__(self):
         super().__init__()
@@ -93,26 +153,26 @@ class helpMenu(discord.ui.View):
         await interaction.response.edit_message(embed=embed)
 
 def displayStats(discordId):
-    emb = discord.Embed(title="AoE2 Profile")
-    player = ella.find_one({'discordId':discordId})
-    if not player:
-        emb.description = "No aoe2 profile associated with your discord id"
-        emb.add_field(name="How to add aoe2 profile:", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>")
-        return emb
-    jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
-    if 'profileId' not in jdata:
-        emb.description = "Invalid ID?"
-        embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
-        return emb
-    emb.title = "AoE2 " +jdata['name']
-    emb.add_field(name="Profile", value=jdata['profileId'], inline=True)
-    emb.add_field(name="Games", value=jdata['games'],inline=True)
-    emb.add_field(name="AoE2Companion", value ="https://www.aoe2companion.com/profile/"+str(jdata['profileId']), inline=True)
-    emb.colour = Colour.random()
-    for ldrbrd in jdata['leaderboards']:
-        emb.add_field(value=str(ldrbrd['rating'])+"-"+str(ldrbrd['maxRating']), name=ldrbrd['leaderboardName'],inline=True)
-    emb.add_field(name="Add yours ", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=True)
-    return emb
+        embed = discord.Embed(title="AoE2 Profile")
+        player = ella.find_one({'discordId':discordId})
+        if not player:
+            embed.description = "Invalid ID?"
+            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            return embed
+        jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
+        if 'profileId' not in jdata:
+            embed.description = "Invalid ID?"
+            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            return embed
+        embed.title = jdata['name']
+        embed.add_field(name="Profile", value=jdata['profileId'], inline=True)
+        embed.add_field(name="Games", value=jdata['games'],inline=True)
+        embed.add_field(name="AoE2Companion", value ="https://www.aoe2companion.com/profile/"+str(jdata['profileId']), inline=False)
+        embed.colour = Colour.random()
+        for ldrbrd in jdata['leaderboards']:
+            embed.add_field(value="{}-{}".format(str(ldrbrd['rating']),str(ldrbrd['maxRating'])), name=ldrbrd['leaderboardName'],inline=False)
+        embed.add_field(name="Add or Change", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=False)
+        return embed
 
 def registerId( authorId, steamId=-1, relicId =-1):
     status = StatusCode()
@@ -134,6 +194,22 @@ def registerId( authorId, steamId=-1, relicId =-1):
     status.message = "Profile found : " + alias
     return status
 
+def updatePersonalStatsGuildWise(guildId):
+    list_of_relicIds = [ i['relicId'] for i in ella.find({'guildIds' : {'$in':[guildId]}}) ]
+    print(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds)))
+    r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds))).json()
+    if r['result']['message'] == 'SUCCESS':
+        statG2relicId =dict()
+        for x in r['statGroups']:
+            statG2relicId[x['id']] = str(x['members'][0]['profile_id'])
+            print(x['members'][0]['alias'])
+        for x in r['leaderboardStats']:
+            if x['leaderboard_id'] == 3:
+                print( ' {} {} {} '.format(statG2relicId[x['statgroup_id']], x['rating'], x['highestrating']))
+                ella.update_one({'relicId': statG2relicId[x['statgroup_id']]},{'$set':{'elo':x['rating'], 'maxElo' : x['highestrating']}})
+    return
+
+# old deprecated in favor of updatePersonalStatsGuildWise
 def getPersonalStatRelic(relicId):
     elo =-1
     melo = -1
@@ -150,7 +226,23 @@ def getPersonalStatRelic(relicId):
     except Exception as exc:
         print(exc)
         pass
-    return (-1,-1)
+    return (-1,-1,-1)
+
+# old deprecated in favor of updatePersonalStatsGuildWise
+def updatePersonalStatsQuickOne(relicId):
+    elo,melo,alias= getPersonalStatRelic(relicId)
+    ella.update_one({'relicId' : relicId} , {'$set': {'elo':elo,'maxElo':melo, 'name':alias }})
+
+# old deprecated in favor of updatePersonalStatsGuildWise
+def updatePersonalStatsMulti(guildId):
+ threadList = []
+ for i in ella.find({'guildIds' : {'$in':[guildId]}}):
+    threadList += [ threading.Thread(target=updatePersonalStatsQuickOne, args = (i['relicId'],) ) ] 
+ for i in range(len(threadList)):
+    threadList[i].start()
+ for i in range(len(threadList)):
+    threadList[i].join()
+ return
 
 def getELORelic(relicId):
     try:
@@ -163,21 +255,7 @@ def getELORelic(relicId):
         print(exc)
         pass
     return (-1,-1)
-
-def updatePersonalStatsQuickOne(relicId):
-    elo,melo,alias= getPersonalStatRelic(relicId)
-    ella.update_one({'relicId' : relicId} , {'$set': {'elo':elo,'maxElo':melo, 'name':alias }})
-
-def updatePersonalStatsMulti(guildId):
- threadList = []
- for i in ella.find({'guildIds' : {'$in':[guildId]}}):
-    threadList += [ threading.Thread(target=updatePersonalStatsQuickOne, args = (i['relicId'],) ) ] 
- for i in range(len(threadList)):
-    threadList[i].start()
- for i in range(len(threadList)):
-    threadList[i].join()
- return
-
+# old deprecated in favor of updatePersonalStatsMulti
 def updatePersonalStatsQuick(guildId):
  for i in ella.find({'guildIds' : {'$in':[guildId]}}):
     r = requests.get('https://data.aoe2companion.com/api/profiles/'+i['relicId']+'?profile_id='+i['relicId']+'&page=1').json()
@@ -268,18 +346,25 @@ async def on_message(message):
         await message.channel.send('I\'m alright')
         return
 
-    if message.content.startswith('!update'):
+    if message.content.startswith('!update') or message.content.startswith('!SSupdate'):
+        starttime = time.time()
+        updatePersonalStatsGuildWise(str(message.guild.id))
+        endtime = time.time()
+        await message.channel.send('Single Thread. Single API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
+        return
+
+    if message.content.startswith('!SMupdate'):
         starttime = time.time()
         updatePersonalStatsQuick(str(message.guild.id))
         endtime = time.time()
-        await message.channel.send('ELO data updated. It took '+str(endtime-starttime))
+        await message.channel.send('Single Thread. Multiple API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
         return
 
-    if message.content.startswith('!mupdate'):
+    if message.content.startswith('!MMupdate'):
         starttime = time.time()
         updatePersonalStatsMulti(str(message.guild.id))
         endtime = time.time()
-        await message.channel.send('ELO data updated. It took '+str(endtime-starttime))
+        await message.channel.send('Multi Thread. Multiple API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
         return
 
     if message.content.startswith('!trackme') or message.content.startswith('!sub'):
@@ -313,11 +398,12 @@ async def on_message(message):
         df = pd.DataFrame(getELOTable(str(message.guild.id)), columns=['Alias','Current','Highest','RelicId'])
         df.index+=1
         dfi.export(df,'elo.png', table_conversion="matplotlib")
-        await message.channel.send(file=discord.File('elo.png'))
-        helptext = 'To add yourself to the guild\'s list type !add <your relic id> or !add <link to your profile on aoe2rec.com> \n'
-        helptext += 'To remove yourself type !remove <id or link>\n'
-        helptext += 'For example \'!add 15730812\' \n'
-        await message.channel.send(helptext)
+        embed = discord.Embed(title="Manual: Guild ELO leaderboard")
+        embed.add_field(name="View", value="*!elo*" )
+        embed.add_field(name="Add", value="*!add <link to aoe2recs or aoe2companion profile>* or *!add <relic id>*", inline=False)
+        embed.add_field(name="Remove", value="*!remove <link to aoe2recs or aoe2companion profile>* or *!remove <relic id>*",inline=False)
+        embed.add_field(name="Update info", value="*!update*",inline=False)
+        await message.channel.send(file=discord.File('elo.png'), embed=embed)
         return
 
     if message.content.startswith('!steamid'):
@@ -332,9 +418,9 @@ async def on_message(message):
 
     if message.content.startswith('!stats'):
         if len(message.mentions)>0:
-            await message.channel.send(embed=displayStats(message.mentions[0].id))
+            await message.channel.send(view=StatsMenu(message.mentions[0].id), embed=displayStats(message.mentions[0].id))
         else: 
-            await message.channel.send(embed=displayStats(message.author.id))
+            await message.channel.send(view=StatsMenu(message.author.id), embed=displayStats(message.author.id))
 
     aoe2de_pattern = re.compile('''aoe2de:\/\/0\/[0-9]+''')
     if aoe2de_pattern.findall(message.content):
