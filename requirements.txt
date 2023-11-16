@@ -1,0 +1,5 @@
+pymongo
+requests
+python-dotenv
+dataframe_image
+discord
