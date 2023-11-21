@@ -1,6 +1,9 @@
 import json
+import threading
+import commieGames
 import apis_
 from discord import Colour
+import recAnalysis
 import sys
 import dataframe_image as dfi
 import logging
@@ -15,6 +18,8 @@ import discord
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import urllib
+import asyncio
+import tourney
 from pymongo.server_api import ServerApi
 load_dotenv()
 
@@ -34,6 +39,13 @@ dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT
 ella = dbclient.aoe2bot.ella
 
 client = discord.Client(intents=discord.Intents.all())
+
+loadingScreens = ['Loading', 'lOading','loAding','loaDing','loadIng','loadiNg', 'loadinG']
+# lsLength = 10
+# a1 = 0
+# for i in range(lsLength):
+    # loadingScreens += ['0'*i+'111'+'0'*(lsLength-1-i)]
+
 
 def customLobbyMenu(author, gameId):
     view = discord.ui.View()
@@ -120,6 +132,7 @@ class helpMenu(discord.ui.View):
     async def personalStats(self,interaction, button): 
         embed = discord.Embed(title="Manual: Personal Stats", description="Display AoE2 ladder rating of discord user")
         embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+        embed.add_field(name="Set a friend's AoE profile", value="*!steamid <steam id> @User* or *!relicid <link to aoe2recs or aoe2companion profile> @User*", inline=False)
         embed.add_field(name="View personal stats", value="*!stats*", inline=False)
         embed.add_field(name="View User's stats", value="*!stats @User*",inline = False)
         await interaction.response.edit_message(embed=embed)
@@ -150,6 +163,12 @@ class helpMenu(discord.ui.View):
     @discord.ui.button(label = "Help", style=discord.ButtonStyle.gray)
     async def helpCommand(self,interaction, button): 
         embed = discord.Embed(title="Manual: Help", description="Use !help or mention the bot to pull up bot manual")
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label = "Record Analysis", style=discord.ButtonStyle.gray)
+    async def helpCommand(self,interaction, button): 
+        embed = discord.Embed(title="Manual: Analysis", description="Short summary of aoe2record file.")
+        embed.add_field(name="Analyse a record", value="**!result** and attach the record file to the message.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
 def displayStats(discordId):
@@ -279,6 +298,12 @@ def getName(relicId):
 def regexGetId(string):
     return re.compile('[0-9][0-9][0-9][0-9][0-9]+').findall(string)[0]
 
+def get3digits(string):
+    try:
+        return re.compile('[0-9][0-9][0-9]').findall(string)[0]
+    except IndexError as ie:
+        return ""
+
 def isRelicIdValid(profile_id):
     return 'error' not in requests.get('https://data.aoe2companion.com/api/profiles/'+profile_id+'?profile_id='+profile_id+'&page=1').json()
 
@@ -333,9 +358,19 @@ def getELOTable(guild_id):
 @client.event
 async def on_ready():
     print(f'We have logged in as {client.user}')
+    for g in client.guilds:
+        print(f"{g.id} = {g.name}")
 
 @client.event
 async def on_message(message):
+    if message.content.startswith("!ping"):
+        usersList = re.compile('[0-9]+').findall(message.content)
+        mentionsList = []
+        for usr in usersList:
+            mentionable = client.get_user(int(usr)).mention
+            mentionsList += [mentionable]
+        await message.channel.send("Pinging "+ ", ".join(mentionsList))
+
     if len(message.content) > 250 or message.author.bot:
         return
 
@@ -407,13 +442,29 @@ async def on_message(message):
 
     if message.content.startswith('!steamid'):
         steamId= regexGetId(message.content)
-        status = registerId( message.author.id, steamId =steamId)
+        status = StatusCode()
+        if message.mentions:
+            status = registerId( message.mentions[0].id, steamId =steamId)
+        else:
+            status = registerId( message.author.id, steamId =steamId)
         await message.channel.send(status.report())
 
     if message.content.startswith('!relicid'):
         relicId= regexGetId(message.content)
-        status = registerId( message.author.id, relicId =relicId)
+        status = StatusCode()
+        if message.mentions:
+            status = registerId( message.mentions[0].id, relicId=relicId)
+        else:
+            status = registerId( message.author.id, relicId=relicId)
         await message.channel.send(status.report())
+
+    if message.content.startswith('!stats add'):
+        relicId = regexGetId(message.content)
+        if not  relicId or not message.mentions:
+            return
+        status = registerId( message.mentions[0].id, relicId =relicId)
+        await message.channel.send(status.report())
+        return
 
     if message.content.startswith('!stats'):
         if len(message.mentions)>0:
@@ -442,6 +493,43 @@ async def on_message(message):
         await message.channel.send(view=helpMenu(), embed=discord.Embed(title="Bot Manual", description="Use the buttons to see manual on different features"))
         return
 
+    if message.content.startswith('!community'):
+        if message.content.startswith('!community reset'):
+            if not commieGames.isAuthorized(message.author):
+                await message.channel.send('Only admins and gameAdmins roles are allowed to reset community games')
+                return
+            commieGames.resetAll(message.guild.id)
+            await message.channel.send('Deleted all community games')
+            return
+        if message.content.startswith('!community autoremove'):
+            if not commieGames.isAuthorized(message.author):
+                await message.channel.send('Only admins and gameAdmins roles are allowed to autoremove community games')
+                return
+            commieGames.removeAllClosedGames(message.guild.id)
+            await message.channel.send('Deleted all closed games')
+        possibleId = get3digits(message.content)
+        if possibleId:
+            possibleId = int(possibleId)
+            cg = commieGames.isCommunityGame(int(possibleId))
+            if not cg:
+                await message.channel.send(f"**Invalid ID?** No community game #{possibleId} found")
+                return
+            if message.attachments:
+                if cg['creatorId'] != message.author.id or not commieGames.isAuthorized(message.author):
+                    await message.channel.send("Only admins, gameAdmins and original creator is allowed to post recording for community games")
+                else:
+                    aoe2recordfile = message.attachments[0]
+                    aoe2recordfilename = f'./aoe2record_{message.author.name}.aoe2record'
+                    await aoe2recordfile.save(aoe2recordfilename)
+                    try:
+                        commieGames.updateWinners(int(possibleId), aoe2recordfilename)
+                        await message.channel.send(f"Winners for #{possibleId} community game updated")
+                    except:
+                        await message.channel.send(f"Error in reading record file")
+            await message.channel.send(view=commieGames.CommunityGameContextMenu(int(possibleId)) , embed=commieGames.commieGameContextEmbed(possibleId))
+            return
+        await message.channel.send(view=commieGames.CommunityGameMenu(message.author.id, message.guild.id, message.author.name, message.guild.name))
+
     if message.content.startswith('!dbtest'):
         db_test_uri =os.getenv('MONGOFULLURI')
         db_test_dbclient = MongoClient(db_test_uri, server_api=ServerApi('1'))
@@ -462,5 +550,28 @@ async def on_message(message):
         db_test_dbclient.close()
         return
 
+    if message.content.startswith('!roles'):
+        print(message.guild.roles)
 
+    if message.content.startswith('!analyze') or message.content.startswith('!analyse') or message.content.startswith('!result'):
+        discordId = message.author.id
+        if not ella.find_one({'discordId':discordId}):
+            await message.channel.send('Profile not registered. Use !relicid or !steamid. See !help.')
+            return
+        if not message.attachments:
+            await message.channel.send('No file attached')
+            return
+        _message = await message.channel.send('...')
+        for ls in loadingScreens:
+            await _message.edit(content=ls)
+        for ls in reversed(loadingScreens):
+            await _message.edit(content=ls)
+        aoe2recordfile = message.attachments[0]
+        aoe2recordfilename = f'./aoe2record_{message.author.name}.aoe2record'
+        await aoe2recordfile.save(aoe2recordfilename)
+        Emb, Vi = recAnalysis.analyzeView(aoe2recordfilename)
+        await message.channel.send(embed=Emb, view=Vi)
+        return
+
+print(loadingScreens)
 client.run(os.getenv('DISCORD_TOKEN'))
