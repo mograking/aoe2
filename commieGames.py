@@ -147,12 +147,21 @@ class LeaveCommunityGameButton(discord.ui.Button):
 
 class PingAllPlayersButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Ping All", style=discord.ButtonStyle.blurple, row=4)
+        super().__init__(label="Ping All", style=discord.ButtonStyle.blurple, row=3)
 
     async def callback(self, interaction):
         assert self.view is not None
         cg = cello.find_one({'quickId':self.view.quickId})
         await interaction.response.send_message(f"!ping "+str(cg['players']))
+        return
+
+class SetWinnersButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Who won?", style=discord.ButtonStyle.blurple, row=3)
+
+    async def callback(self, interaction):
+        assert self.view is not None
+        await interaction.response.send_message(f"To update data to show winners, type **!community {self.view.quickId}** and attach recording file**.\n Only original creator or admins can do this for each community game")
         return
 
 
@@ -210,6 +219,7 @@ class CommunityGameContextMenu(discord.ui.View):
         self.add_item(JoinCommunityGameButton())
         self.add_item(LeaveCommunityGameButton())
         self.add_item(PingAllPlayersButton())
+        self.add_item(SetWinnersButton())
         self.add_item(RefreshButton())
         self.add_item(DeleteCommunityGameButton())
 

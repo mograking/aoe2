@@ -166,9 +166,15 @@ class helpMenu(discord.ui.View):
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Record Analysis", style=discord.ButtonStyle.gray)
-    async def helpCommand(self,interaction, button): 
+    async def recAnalysisF(self,interaction, button): 
         embed = discord.Embed(title="Manual: Analysis", description="Short summary of aoe2record file.")
         embed.add_field(name="Analyse a record", value="**!result** and attach the record file to the message.", inline=False)
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label = "Community Games Manager", style=discord.ButtonStyle.success)
+    async def communityGamesManager(self,interaction, button): 
+        embed = discord.Embed(title="Manual: Community Games Manager", description="Tools for running community games. Join, Leave, Ping, Delete, Winners.")
+        embed.add_field(name="Open manager", value="**!community**", inline=False)
         await interaction.response.edit_message(embed=embed)
 
 def displayStats(discordId):
