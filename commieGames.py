@@ -161,7 +161,7 @@ class SetWinnersButton(discord.ui.Button):
 
     async def callback(self, interaction):
         assert self.view is not None
-        await interaction.response.send_message(f"To update data to show winners, type **!community {self.view.quickId}** and attach recording file**.\n Only original creator or admins can do this for each community game")
+        await interaction.response.send_message(f"To update data to show winners, type **!community {self.view.quickId}** and attach recording file.\n Only original creator or admins can do this for each community game")
         return
 
 
