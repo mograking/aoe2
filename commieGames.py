@@ -147,7 +147,7 @@ class LeaveCommunityGameButton(discord.ui.Button):
 
 class PingAllPlayersButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Ping All", style=discord.ButtonStyle.blurple, row=3)
+        super().__init__(label="Ping All Participants", style=discord.ButtonStyle.blurple, row=3)
 
     async def callback(self, interaction):
         assert self.view is not None

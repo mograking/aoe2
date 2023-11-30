@@ -385,6 +385,8 @@ async def on_message(message):
         return
 
     if message.content.startswith('!update') or message.content.startswith('!SSupdate'):
+        await message.channel.send('This feature has been deprecated in favor of !stats')
+        return
         starttime = time.time()
         updatePersonalStatsGuildWise(str(message.guild.id))
         endtime = time.time()
@@ -422,12 +424,16 @@ async def on_message(message):
         return
 
     if message.content.startswith('!remove'):
+        await message.channel.send('This feature has been deprecated in favor of !stats')
+        return
         relicId = regexGetId(message.content)
         status = removeIdFromGuild(relicId,str(message.guild.id))
         await message.channel.send(status.report())
         return
 
     if message.content.startswith('!id') or message.content.startswith('!add'):
+        await message.channel.send('This feature has been deprecated in favor of !stats')
+        return
         relicId = regexGetId(message.content)
         status = addIdToGuild(relicId,str(message.guild.id))
         await message.channel.send(status.report())
@@ -435,6 +441,8 @@ async def on_message(message):
 
 
     if message.content.startswith('!elo'):
+        await message.channel.send('This feature has been deprecated in favor of !stats')
+        return
         df = pd.DataFrame(getELOTable(str(message.guild.id)), columns=['Alias','Current','Highest','RelicId'])
         df.index+=1
         dfi.export(df,'elo.png', table_conversion="matplotlib")
