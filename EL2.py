@@ -77,13 +77,13 @@ class StatsMenu(discord.ui.View):
         player = self.player
         if not player:
             embed.description = "Invalid ID?"
-            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             await interaction.response.edit_message(embed=embed)
             return
         jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
         if 'profileId' not in jdata:
             embed.description = "Invalid ID?"
-            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             await interaction.response.edit_message(embed=embed)
             return
         embed.title = jdata['name']
@@ -93,7 +93,7 @@ class StatsMenu(discord.ui.View):
         embed.colour = Colour.random()
         for ldrbrd in jdata['leaderboards']:
             embed.add_field(value="{}-{}".format(str(ldrbrd['rating']),str(ldrbrd['maxRating'])), name=ldrbrd['leaderboardName'],inline=False)
-        embed.add_field(name="Add or Change", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=False)
+        embed.add_field(name="Add or Change", value="Type -steamid <your steam id> or -relicid <your aoe2 profile id>", inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label="Last Match", style=discord.ButtonStyle.green)
@@ -102,7 +102,7 @@ class StatsMenu(discord.ui.View):
         player=self.player
         if not player:
             embed.description = "Invalid ID?"
-            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             await interaction.response.edit_message(embed=embed)
             return
         jdata = requests.get(apis_.aoe2companionMatches(player['relicId'])).json()
@@ -131,26 +131,26 @@ class helpMenu(discord.ui.View):
     @discord.ui.button(label = "Stats", style=discord.ButtonStyle.green)
     async def personalStats(self,interaction, button): 
         embed = discord.Embed(title="Manual: Personal Stats", description="Display AoE2 ladder rating of discord user")
-        embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
-        embed.add_field(name="Set a friend's AoE profile", value="*!steamid <steam id> @User* or *!relicid <link to aoe2recs or aoe2companion profile> @User*", inline=False)
-        embed.add_field(name="View personal stats", value="*!stats*", inline=False)
-        embed.add_field(name="View User's stats", value="*!stats @User*",inline = False)
+        embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+        embed.add_field(name="Set a friend's AoE profile", value="*-steamid <steam id> @User* or *-relicid <link to aoe2recs or aoe2companion profile> @User*", inline=False)
+        embed.add_field(name="View personal stats", value="*-stats*", inline=False)
+        embed.add_field(name="View User's stats", value="*-stats @User*",inline = False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Sub", style=discord.ButtonStyle.blurple)
     async def subscribeMatchDetails(self,interaction, button): 
         embed = discord.Embed(title="Manual: Subscribe to match details", description="The bot will dm you your opponents ELO ratings during matches")
-        embed.add_field(name="Subscribe", value="*!sub <link to your aoe2recs or aoe2companion profile>* or *!sub <relic id>*" ,inline=False)
-        embed.add_field(name="Unsubscribe", value="*!unsub*",inline=False)
+        embed.add_field(name="Subscribe", value="*-sub <link to your aoe2recs or aoe2companion profile>* or *-sub <relic id>*" ,inline=False)
+        embed.add_field(name="Unsubscribe", value="*-unsub*",inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Guild leaderboard", style=discord.ButtonStyle.red)
     async def viewGuildLeaderboard(self,interaction, button): 
         embed = discord.Embed(title="Manual: Guild ELO leaderboard")
-        embed.add_field(name="View", value="*!elo*" )
-        embed.add_field(name="Add", value="*!add <link to aoe2recs or aoe2companion profile>* or *!add <relic id>*", inline=False)
-        embed.add_field(name="Remove", value="*!remove <link to aoe2recs or aoe2companion profile>* or *!remove <relic id>*",inline=False)
-        embed.add_field(name="Update info", value="*!update*",inline=False)
+        embed.add_field(name="View", value="*-elo*" )
+        embed.add_field(name="Add", value="*-add <link to aoe2recs or aoe2companion profile>* or *-add <relic id>*", inline=False)
+        embed.add_field(name="Remove", value="*-remove <link to aoe2recs or aoe2companion profile>* or *-remove <relic id>*",inline=False)
+        embed.add_field(name="Update info", value="*-update*",inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "aoe2de:// links", style=discord.ButtonStyle.gray)
@@ -162,19 +162,19 @@ class helpMenu(discord.ui.View):
 
     @discord.ui.button(label = "Help", style=discord.ButtonStyle.gray)
     async def helpCommand(self,interaction, button): 
-        embed = discord.Embed(title="Manual: Help", description="Use !help or mention the bot to pull up bot manual")
+        embed = discord.Embed(title="Manual: Help", description="Use -help or mention the bot to pull up bot manual")
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Record Analysis", style=discord.ButtonStyle.gray)
     async def recAnalysisF(self,interaction, button): 
         embed = discord.Embed(title="Manual: Analysis", description="Short summary of aoe2record file.")
-        embed.add_field(name="Analyse a record", value="**!result** and attach the record file to the message.", inline=False)
+        embed.add_field(name="Analyse a record", value="**-result** and attach the record file to the message.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Community Games Manager", style=discord.ButtonStyle.success)
     async def communityGamesManager(self,interaction, button): 
         embed = discord.Embed(title="Manual: Community Games Manager", description="Tools for running community games. Join, Leave, Ping, Delete, Winners.")
-        embed.add_field(name="Open manager", value="**!community**", inline=False)
+        embed.add_field(name="Open manager", value="**-community**", inline=False)
         await interaction.response.edit_message(embed=embed)
 
 def displayStats(discordId):
@@ -182,12 +182,12 @@ def displayStats(discordId):
         player = ella.find_one({'discordId':discordId})
         if not player:
             embed.description = "Invalid ID?"
-            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             return embed
         jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
         if 'profileId' not in jdata:
             embed.description = "Invalid ID?"
-            embed.add_field(name="Set your AoE profile", value="*!steamid <your steam id>* or *!relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
+            embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             return embed
         embed.title = jdata['name']
         embed.add_field(name="Profile", value=jdata['profileId'], inline=True)
@@ -196,7 +196,7 @@ def displayStats(discordId):
         embed.colour = Colour.random()
         for ldrbrd in jdata['leaderboards']:
             embed.add_field(value="{}-{}".format(str(ldrbrd['rating']),str(ldrbrd['maxRating'])), name=ldrbrd['leaderboardName'],inline=False)
-        embed.add_field(name="Add or Change", value="Type !steamid <your steam id> or !relicid <your aoe2 profile id>", inline=False)
+        embed.add_field(name="Add or Change", value="Type -steamid <your steam id> or -relicid <your aoe2 profile id>", inline=False)
         return embed
 
 def registerId( authorId, steamId=-1, relicId =-1):
@@ -369,7 +369,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if message.content.startswith("!ping"):
+    if message.content.startswith("!ping") or message.content.startswith("-ping"):
         usersList = re.compile('[0-9]+').findall(message.content)
         mentionsList = []
         for usr in usersList:
@@ -409,7 +409,7 @@ async def on_message(message):
         await message.channel.send('Multi Thread. Multiple API. ELO data updated. It took {:.2f} seconds'.format(endtime-starttime))
         return
 
-    if message.content.startswith('!trackme') or message.content.startswith('!sub'):
+    if  message.content.startswith('!sub') or message.content.startswith("-sub"):
         relicId = regexGetId(message.content)
         if relicId == "":
             await message.channel.send("Try !sub <relic id> to get updates on your ongoing matches")
@@ -418,12 +418,12 @@ async def on_message(message):
         await message.channel.send(status.report() + "\n Use !sub <relicid> to receive information on your ongoing matches")
         return
 
-    if message.content.startswith('!untrackme') or message.content.startswith('!unsub'):
+    if  message.content.startswith('!unsub') or message.content.startswith("-unsub"):
         status = removeTracking(message.author.id)
         await message.channel.send(status.report())
         return
 
-    if message.content.startswith('!remove'):
+    if message.content.startswith('!remove') or message.content.startswith("-remove"):
         await message.channel.send('This feature has been deprecated in favor of !stats')
         return
         relicId = regexGetId(message.content)
@@ -431,7 +431,7 @@ async def on_message(message):
         await message.channel.send(status.report())
         return
 
-    if message.content.startswith('!id') or message.content.startswith('!add'):
+    if  message.content.startswith('!add') or message.content.startswith("-add"):
         await message.channel.send('This feature has been deprecated in favor of !stats')
         return
         relicId = regexGetId(message.content)
@@ -454,7 +454,7 @@ async def on_message(message):
         await message.channel.send(file=discord.File('elo.png'), embed=embed)
         return
 
-    if message.content.startswith('!steamid'):
+    if message.content.startswith('!steamid') or message.content.startswith("-steamid"):
         steamId= regexGetId(message.content)
         status = StatusCode()
         if message.mentions:
@@ -463,7 +463,7 @@ async def on_message(message):
             status = registerId( message.author.id, steamId =steamId)
         await message.channel.send(status.report())
 
-    if message.content.startswith('!relicid'):
+    if message.content.startswith('!relicid') or message.content.startswith("-relicid"):
         relicId= regexGetId(message.content)
         status = StatusCode()
         if message.mentions:
@@ -472,7 +472,7 @@ async def on_message(message):
             status = registerId( message.author.id, relicId=relicId)
         await message.channel.send(status.report())
 
-    if message.content.startswith('!stats add'):
+    if message.content.startswith('!stats add') or message.content.startswith("-stats add"):
         relicId = regexGetId(message.content)
         if not  relicId or not message.mentions:
             return
@@ -480,7 +480,7 @@ async def on_message(message):
         await message.channel.send(status.report())
         return
 
-    if message.content.startswith('!stats'):
+    if message.content.startswith('!stats') or message.content.startswith("-stats"):
         if len(message.mentions)>0:
             await message.channel.send(view=StatsMenu(message.mentions[0].id), embed=displayStats(message.mentions[0].id))
         else: 
@@ -503,11 +503,11 @@ async def on_message(message):
         await message.channel.send(embed=matchPoster)
         return
 
-    if message.content.startswith('!help'):
+    if message.content.startswith('!help') or message.content.startswith("-help"):
         await message.channel.send(view=helpMenu(), embed=discord.Embed(title="Bot Manual", description="Use the buttons to see manual on different features"))
         return
 
-    if message.content.startswith('!community'):
+    if message.content.startswith('!community') or message.content.startswith("-community"):
         if message.content.startswith('!community reset'):
             if not commieGames.isAuthorized(message.author):
                 await message.channel.send('Only admins and gameAdmins roles are allowed to reset community games')
@@ -544,7 +544,7 @@ async def on_message(message):
             return
         await message.channel.send(view=commieGames.CommunityGameMenu(message.author.id, message.guild.id, message.author.name, message.guild.name))
 
-    if message.content.startswith('!dbtest'):
+    if message.content.startswith('!dbtest') or message.content.startswith("-dbtest"):
         db_test_uri =os.getenv('MONGOFULLURI')
         db_test_dbclient = MongoClient(db_test_uri, server_api=ServerApi('1'))
         db_test_ella = db_test_dbclient.aoe2bot.ella
@@ -564,10 +564,10 @@ async def on_message(message):
         db_test_dbclient.close()
         return
 
-    if message.content.startswith('!roles'):
+    if message.content.startswith('!roles') or message.content.startswith("-roles"):
         print(message.guild.roles)
 
-    if message.content.startswith('!analyze') or message.content.startswith('!analyse') or message.content.startswith('!result'):
+    if message.content.startswith('!result') or message.content.startswith("-result"):
         discordId = message.author.id
         if not ella.find_one({'discordId':discordId}):
             await message.channel.send('Profile not registered. Use !relicid or !steamid. See !help.')
