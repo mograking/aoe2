@@ -2,8 +2,7 @@ from mgz.summary import Summary
 import json
 import discord
 
-civId = json.load(open('./100.json', 'r'))
-
+civId = json.load(open('./modules/100.json', 'r'))
 
 def getWinners(file):
     winners = []
@@ -15,8 +14,7 @@ def getWinners(file):
                 winners+=[p['name']]
     return winners
 
-
-def analyzeEmbedPlayers(file):
+def summaryEmbedPlayers(file):
     embed = discord.Embed(title='Rec Analysis')
     with open(file,'rb') as aoe2rec:
         s = Summary(aoe2rec)
@@ -31,7 +29,7 @@ def analyzeEmbedPlayers(file):
         return embed
     return embed
 
-def analyzeEmbedSettings(file):
+def summaryEmbedSettings(file):
     embed = discord.Embed(title='Rec Analysis')
     with open(file,'rb') as aoe2rec:
         s = Summary(aoe2rec)
@@ -48,12 +46,12 @@ def analyzeEmbedSettings(file):
         embed.add_field(name='victory', value=str(settings['victory_condition'][1]), inline=True)
     return embed
 
-class RecAnalysisView(discord.ui.View):
+class summaryView(discord.ui.View):
     def __init__(self, file):
         super().__init__(timeout=1000)
         self.agefile = file
-        self.playersEmbed = analyzeEmbedPlayers(file)
-        self.settingsEmbed = analyzeEmbedSettings(file)
+        self.playersEmbed = summaryEmbedPlayers(file)
+        self.settingsEmbed = summaryEmbedSettings(file)
 
     @discord.ui.button(label="Players", style=discord.ButtonStyle.blurple)
     async def players(self, interaction, button):
@@ -63,8 +61,20 @@ class RecAnalysisView(discord.ui.View):
     async def settings(self, interaction, button):
         await interaction.response.edit_message(embed=self.settingsEmbed)
 
-def analyzeView(file):
-    embed = analyzeEmbedPlayers(file)
-    view = RecAnalysisView(file)
+def summaryUI(file):
+    embed = summaryEmbedPlayers(file)
+    view = summaryView(file)
     return (embed,view)
 
+def isCommand(message):
+    return message.content.startswith('-result') or message.content.startswith('!result')
+
+async def respond(message):
+    if not message.attachments:
+        await message.channel.send('No file attached')
+        return
+    aoe2recordfile = message.attachments[0]
+    aoe2recordfilename = f'./aoe2record_{message.author.name}.aoe2record'
+    await aoe2recordfile.save(aoe2recordfilename)
+    embed, view = summaryUI(aoe2recordfilename)
+    await message.channel.send(embed=embed, view=view)
