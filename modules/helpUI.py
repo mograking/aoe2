@@ -21,8 +21,7 @@ class helpMenu(discord.ui.View):
     @discord.ui.button(label = "Sub", style=discord.ButtonStyle.blurple)
     async def subscribeMatchDetails(self,interaction, button): 
         embed = discord.Embed(title="Manual: Subscribe to match details", description="The bot will dm you your opponents ELO ratings during matches")
-        embed.add_field(name="Subscribe", value="*-sub <link to your aoe2recs or aoe2companion profile>* or *-sub <relic id>*" ,inline=False)
-        embed.add_field(name="Unsubscribe", value="*-unsub*",inline=False)
+        embed.add_field(name="REMOVED", value="This feature was removed." ,inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Bracket leaderboard", style=discord.ButtonStyle.red)
@@ -38,6 +37,12 @@ class helpMenu(discord.ui.View):
         embed = discord.Embed(title="Manual: Clickable aoe2de:// links", description="Join and spectate buttons for custom lobby links")
         embed.add_field(name="Why?", value="Discord doesn't allow aoe2de:// to be clickable. This bot creates a http link that redirects to the aoe2de link, thereby saving players from having to copy paste custom lobby links.", inline=False)
         embed.add_field(name="How?", value="Just drop a aoe2de:// link and the bot will do the rest.", inline=False)
+        await interaction.response.edit_message(embed=embed)
+
+    @discord.ui.button(label = "Taunts", style=discord.ButtonStyle.red)
+    async def helpCommand(self,interaction, button): 
+        embed = discord.Embed(title="Manual: Taunts", description="Bot drops the soundbites from the game into chat")
+        embed.add_field(name="Available sounds=", value="1, 2, 11, 14, 105", inline=False)
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Help", style=discord.ButtonStyle.gray)

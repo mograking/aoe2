@@ -1,8 +1,8 @@
 import modules.aoe2records as a2r
 import modules.helpUI as help
+import modules.taunts as taunts
 import modules.bracket as bracket
 import modules.lobbyLinks as links
-import modules.subscribe as subscribe
 import modules.stats as stats
 
 import os
@@ -26,9 +26,6 @@ async def on_message(message):
     if bracket.isCommand(message):
         await bracket.respond(message)
 
-    if subscribe.isCommand(message):
-        await subscribe.respond(message)
-
     if stats.isCommand(message):
         await stats.respond(message)
 
@@ -37,6 +34,9 @@ async def on_message(message):
 
     if help.isCommand(message):
         await help.respond(message)
+
+    if taunts.isCommand(message):
+        await taunts.respond(message)
 
     if a2r.isCommand(message):
         await a2r.respond(message)
