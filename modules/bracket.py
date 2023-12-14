@@ -1,9 +1,9 @@
 
-
+import json
+import re
 import requests
 import apis_
 import discord
-import dataframe_image as dfi
 import pandas as pd
 
 import os
@@ -15,11 +15,15 @@ dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT
 ella = dbclient.aoe2bot.ella
 
 def getELOTableBracket(guild_id, minElo=0, maxElo=3000):
-    return [ ('-1' if 'name' not in x else x['name'], -1 if 'elo' not in x else x['elo'], -1 if 'maxElo' not in x else x['maxElo'], -1 if 'relicId' not in x else x['relicId']) for x in ella.find({'discordId':{'$exists':'true'}, 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) ]
+    return [ ('-1' if 'name' not in x else x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in ella.find({'discordId':{'$exists':'true'}, 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) ]
 
 def updatePersonalStatsGuildWise(guildId):
     list_of_relicIds = [ i['relicId'] for i in ella.find({'guildIds' : {'$in':[guildId]}}) ]
-    r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds))).json()
+    try:
+        r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds))).json()
+    except json.decoder.JSONDecodeError as exc:
+        print(list_of_relicIds)
+        return
     if r['result']['message'] == 'SUCCESS':
         statG2relicId =dict()
         statG2name =dict()
@@ -39,24 +43,26 @@ async def respond(message):
             return
         for member in message.guild.members:
             if ella.find_one({'discordId':member.id, 'guildIds' :{'$nin' : [str(message.guild.id)]}} ) :
-                ella.update_one({'discordId':str(member.id)}, {'$push':{ 'guildIds':str(message.guild.id)} })
+                print(member.name)
+                ella.update_one({'discordId':member.id}, {'$push':{ 'guildIds':str(message.guild.id)} })
 
         if type(message.channel) is not discord.TextChannel:
             await message.channel.send('Not guild channel')
-        minELO, maxELO = message.channel.name.split('-')
-        if not minELO or not maxELO or not maxELO.isnumeric() or ( not (minELO=='lt' or minELO=='gt') and not minELO.isnumeric() ):
-            await message.channel.send('Guild name should be NUMBER-NUMBER or gt-NUMBER or lt-NUMBER.\n NUMBER should be between 0 and 3000')
-        if minELO=='lt':
-            minELO=0
-            maxELO=int(maxELO)
-        elif minELO=='gt':
-            minELO=int(maxELO)
-            maxELO=3000
-        else:
-            minELO=int(minELO)
-            maxELO=int(maxELO)
+        bracketChannelNameRe = re.compile('''(lt|gt|[0-9]+)-[0-9]+''')
+        minELO = 0
+        maxELO = 3000
+        if bracketChannelNameRe.findall(message.channel.name):
+            limits = re.compile("[0-9]+").findall(message.channel.name)
+            if message.channel.name.startswith('lt'):
+                maxELO = int(limits[0])
+            elif message.channel.name.startswith('gt'):
+                minELO = int(limits[0])
+            else:
+                minELO, maxELO = [int(x) for x in limits]
         updatePersonalStatsGuildWise(str(message.guild.id))
-        df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current','Highest','RelicId'])
+        df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current-Highest'])
         df.index+=1
-        dfi.export(df,'elo.png', table_conversion="matplotlib")
-        await message.channel.send(file=discord.File('elo.png'))
+        try:
+            await message.channel.send("```\n{}\nYou can limit the output by changing the channel name to minELO-maxELO or gt-minELO or lt-maxELO. For example: 1000-1200 or lt-500. ELOs must be between 0 and 3000.```".format(df.to_markdown()) )
+        except discord.errors.HTTPException as exc:
+            await message.channel.send("```\nToo many members. Discord message limit exceeded. Use bracket limits to filter members and limit output. Create a channel with name NUM-NUM or gt-NUM or lt-NUM where NUM is a number between 0 and 3000 and run -bracket in the channel. For example: 900-1000.```")

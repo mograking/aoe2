@@ -1,10 +1,8 @@
+from __future__ import with_statement
 import re
 import os
 from dotenv import load_dotenv
 import discord
-
-load_dotenv()
-
 
 def customLobbyMenu(author, gameId):
     view = discord.ui.View()
@@ -22,4 +20,3 @@ async def respond(message):
         except IndexError as exc:
             return
         await message.channel.send(view = customLobbyMenu(message.author.name, matchId))
-        return

@@ -40,7 +40,7 @@ class helpMenu(discord.ui.View):
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Taunts", style=discord.ButtonStyle.red)
-    async def helpCommand(self,interaction, button): 
+    async def tauntsFiles(self,interaction, button): 
         embed = discord.Embed(title="Manual: Taunts", description="Bot drops the soundbites from the game into chat")
         embed.add_field(name="Available sounds=", value="1, 2, 11, 14, 105", inline=False)
         await interaction.response.edit_message(embed=embed)

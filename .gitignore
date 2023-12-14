@@ -1,0 +1,10 @@
+.env
+.gitt
+*.log
+__pycache__/
+modules/__pycache__/
+aoe2de_redirect/node_modules/
+aoe2de_redirect/package-lock.json
+*.aoe2record
+elo.png
+

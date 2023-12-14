@@ -35,9 +35,6 @@ async def on_message(message):
     if help.isCommand(message):
         await help.respond(message)
 
-    if taunts.isCommand(message):
-        await taunts.respond(message)
-
     if a2r.isCommand(message):
         await a2r.respond(message)
 
