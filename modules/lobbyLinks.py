@@ -6,8 +6,10 @@ import discord
 
 def customLobbyMenu(author, gameId):
     view = discord.ui.View()
-    view.add_item(discord.ui.Button(label="Join "+str(author)+"\'s game", url="http://"+str(os.getenv('SERVERHTTP'))+"?gameId="+str(gameId)+"&spectate=0"))
-    view.add_item(discord.ui.Button(label="Spectate", url="http://"+str(os.getenv('SERVERHTTP'))+"?gameId="+str(gameId)+"&spectate=1"))
+    view.add_item(discord.ui.Button(label="Join "+str(author)+"\'s game", url=f"https://www.aoe2lobby.com/j/{gameId}"))
+    #view.add_item(discord.ui.Button(label="Join "+str(author)+"\'s game", url="http://"+str(os.getenv('SERVERHTTP'))+"?gameId="+str(gameId)+"&spectate=0"))
+    view.add_item(discord.ui.Button(label="Spectate", url=f"https://www.aoe2lobby.com/w/{gameId}"))
+    #view.add_item(discord.ui.Button(label="Spectate", url="http://"+str(os.getenv('SERVERHTTP'))+"?gameId="+str(gameId)+"&spectate=1"))
     return view
 
 def isCommand(message):

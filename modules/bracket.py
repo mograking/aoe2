@@ -14,15 +14,27 @@ load_dotenv()
 dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT')))
 ella = dbclient.aoe2bot.ella
 
+def leftTrimEachLine(text):
+    return re.sub(r'(\s|\|)+\n', '\n', text)
+
+def getPlayerDataGuild(guild_id, minElo=0, maxElo=0):
+    return ella.find({'discordId':{'$exists':'true'},'maxElo' :{'$ne' : 0} , 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) 
+
+# for shorter display
+def createELONameList(dbResponse):
+    return [ (x['elo'], x['name'][:15] )  for x in dbResponse ]
+
+def createNameELOList(dbResponse):
+    return [ (x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in dbResponse ]
+
 def getELOTableBracket(guild_id, minElo=0, maxElo=3000):
-    return [ ('-1' if 'name' not in x else x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in ella.find({'discordId':{'$exists':'true'}, 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) ]
+    return [ ('-1' if 'name' not in x else x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in ella.find({'discordId':{'$exists':'true'},'maxElo' :{'$ne' : 0} , 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) ]
 
 def updatePersonalStatsGuildWise(guildId):
     list_of_relicIds = [ i['relicId'] for i in ella.find({'guildIds' : {'$in':[guildId]}}) ]
     try:
         r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(list_of_relicIds))).json()
     except json.decoder.JSONDecodeError as exc:
-        print(list_of_relicIds)
         return
     if r['result']['message'] == 'SUCCESS':
         statG2relicId =dict()
@@ -60,9 +72,20 @@ async def respond(message):
             else:
                 minELO, maxELO = [int(x) for x in limits]
         updatePersonalStatsGuildWise(str(message.guild.id))
-        df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current-Highest'])
+        dbResponse = getPlayerDataGuild(str(message.guild.id), minElo=minELO, maxElo=maxELO)
+        df = pd.DataFrame(createNameELOList(dbResponse), columns=['Alias','Current-Highest'])
+        #df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current-Highest'])
         df.index+=1
         try:
             await message.channel.send("```\n{}\nYou can limit the output by changing the channel name to minELO-maxELO or gt-minELO or lt-maxELO. For example: 1000-1200 or lt-500. ELOs must be between 0 and 3000.```".format(df.to_markdown()) )
         except discord.errors.HTTPException as exc:
-            await message.channel.send("```\nToo many members. Discord message limit exceeded. Use bracket limits to filter members and limit output. Create a channel with name NUM-NUM or gt-NUM or lt-NUM where NUM is a number between 0 and 3000 and run -bracket in the channel. For example: 900-1000.```")
+            dbResponse = getPlayerDataGuild(str(message.guild.id), minElo=minELO, maxElo=maxELO)
+            df = pd.DataFrame(createELONameList(dbResponse), columns=['ELO','Alias'])
+            df.index += 1
+            mdtext = df.to_markdown(tablefmt="plain")
+            mdtext = leftTrimEachLine(mdtext)
+            try:
+                await message.channel.send("```\n{}\n```".format(mdtext))
+            except discord.errors.HTTPException as exc:
+                await message.channel.send("```\nToo many members. Discord message limit exceeded. Use bracket limits to filter members and limit output. Create a channel with name NUM-NUM or gt-NUM or lt-NUM where NUM is a number between 0 and 3000 and run -bracket in the channel. For example: 900-1000.```")
+            await message.channel.send("To add yourself to this list, see 'Player Stats' under -help")
