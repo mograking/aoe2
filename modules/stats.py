@@ -77,6 +77,14 @@ class StatsMenu(discord.ui.View):
                 embed.add_field(name=player_["name"], value="( {} ) {}".format(player_["rating"], player_["civName"]))
         await interaction.response.edit_message(embed=embed)
 
+class FAQMenu(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+
+    @discord.ui.button(label="FAQ", style=discord.ButtonStyle.blurple)
+    async def FAQBox(self, interaction, button):
+        await interaction.response.send_message("```md 1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```")
+
 def displayStatsShort(discordId):
         embed = discord.Embed(title="AoE2 Profile")
         player = ella.find_one({'discordId':discordId})
@@ -114,7 +122,7 @@ def registerId( authorId, steamId=-1, relicId =-1, guildID=""):
         r = requests.get(apis_.relicLinkPersonalStatsSteam(steamId)).json()
     elif relicId != -1:
         r = requests.get(apis_.relicLinkPersonalStatsRelic(relicId)).json()
-    alias= ""
+    alias = ""
     try:
         relicId = str(r['statGroups'][0]['members'][0]['profile_id'])
         alias = r['statGroups'][0]['members'][0]['alias']
@@ -141,6 +149,9 @@ async def respond(message):
             status = registerId( message.mentions[0].id, steamId =steamId,  guildID = str(message.guild.id) )
         else:
             status = registerId( message.author.id, steamId =steamId, guildID = str(message.guild.id) ) 
+        if status.code == -1:
+            await message.channel.send('Invalid', view=FAQMenu())
+            return
         await message.channel.send(status.report())
 
     if message.content.startswith('!relicid') or message.content.startswith("-relicid"):
@@ -150,6 +161,9 @@ async def respond(message):
             status = registerId( message.mentions[0].id, relicId=relicId, guildID = str(message.guild.id) )
         else:
             status = registerId( message.author.id, relicId=relicId, guildID = str(message.guild.id) )
+        if status.code == -1:
+            await message.channel.send('Invalid', view=FAQMenu())
+            return
         await message.channel.send(status.report())
 
     if message.content.startswith('!stats add') or message.content.startswith("-stats add"):

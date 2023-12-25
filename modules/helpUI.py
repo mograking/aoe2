@@ -9,20 +9,16 @@ class helpMenu(discord.ui.View):
         super().__init__()
         self.value=None
 
-    @discord.ui.button(label = "Stats", style=discord.ButtonStyle.green)
+    @discord.ui.button(label = "Player Stats", style=discord.ButtonStyle.green)
     async def personalStats(self,interaction, button): 
         embed = discord.Embed(title="Manual: Personal Stats", description="Display AoE2 ladder rating of discord user")
         embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
         embed.add_field(name="Set a friend's AoE profile", value="*-steamid <steam id> @User* or *-relicid <link to aoe2recs or aoe2companion profile> @User*", inline=False)
         embed.add_field(name="View personal stats", value="*-stats*", inline=False)
         embed.add_field(name="View User's stats", value="*-stats @User*",inline = False)
+        embed.add_field(name="NOTE", value="Your steam id is under account details. It's a long long integer.",inline = False)
         await interaction.response.edit_message(embed=embed)
 
-    @discord.ui.button(label = "Sub", style=discord.ButtonStyle.blurple)
-    async def subscribeMatchDetails(self,interaction, button): 
-        embed = discord.Embed(title="Manual: Subscribe to match details", description="The bot will dm you your opponents ELO ratings during matches")
-        embed.add_field(name="REMOVED", value="This feature was removed." ,inline=False)
-        await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Bracket leaderboard", style=discord.ButtonStyle.red)
     async def viewGuildLeaderboard(self,interaction, button): 
@@ -39,10 +35,10 @@ class helpMenu(discord.ui.View):
         embed.add_field(name="How?", value="Just drop a aoe2de:// link and the bot will do the rest.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
-    @discord.ui.button(label = "Taunts", style=discord.ButtonStyle.red)
-    async def tauntsFiles(self,interaction, button): 
-        embed = discord.Embed(title="Manual: Taunts", description="Bot drops the soundbites from the game into chat")
-        embed.add_field(name="Available sounds=", value="1, 2, 11, 14, 105", inline=False)
+    @discord.ui.button(label="FAQ", style=discord.ButtonStyle.blurple)
+    async def FAQBox(self, interaction, button):
+        embed = discord.Embed(title="Manual: FAQ")
+        embed.description = "```md 1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```"
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Help", style=discord.ButtonStyle.gray)

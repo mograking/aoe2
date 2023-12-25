@@ -77,7 +77,7 @@ async def respond(message):
         #df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current-Highest'])
         df.index+=1
         try:
-            await message.channel.send("```\n{}\nYou can limit the output by changing the channel name to minELO-maxELO or gt-minELO or lt-maxELO. For example: 1000-1200 or lt-500. ELOs must be between 0 and 3000.```".format(df.to_markdown()) )
+            await message.channel.send("```\n{}\nYou can limit the output by changing the channel name to minELO-maxELO or gt-minELO or lt-maxELO. For example: 1000-1200 or lt-500. ELOs must be between 0 and 3000. To add yourself to this list, see Player Stats under -help```".format(df.to_markdown()) )
         except discord.errors.HTTPException as exc:
             dbResponse = getPlayerDataGuild(str(message.guild.id), minElo=minELO, maxElo=maxELO)
             df = pd.DataFrame(createELONameList(dbResponse), columns=['ELO','Alias'])
@@ -88,4 +88,3 @@ async def respond(message):
                 await message.channel.send("```\n{}\n```".format(mdtext))
             except discord.errors.HTTPException as exc:
                 await message.channel.send("```\nToo many members. Discord message limit exceeded. Use bracket limits to filter members and limit output. Create a channel with name NUM-NUM or gt-NUM or lt-NUM where NUM is a number between 0 and 3000 and run -bracket in the channel. For example: 900-1000.```")
-            await message.channel.send("To add yourself to this list, see 'Player Stats' under -help")
