@@ -35,10 +35,16 @@ class helpMenu(discord.ui.View):
         embed.add_field(name="How?", value="Just drop a aoe2de:// link and the bot will do the rest.", inline=False)
         await interaction.response.edit_message(embed=embed)
 
+    @discord.ui.button(label="Search", style=discord.ButtonStyle.green)
+    async def SearchPlayer(self, interaction, button):
+        embed = discord.Embed(title="Manual: Search")
+        embed.description = "Use ```-search search-text``` to search up a player name. Example: ```-search kuelfd```"
+        await interaction.response.edit_message(embed=embed)
+
     @discord.ui.button(label="FAQ", style=discord.ButtonStyle.blurple)
     async def FAQBox(self, interaction, button):
         embed = discord.Embed(title="Manual: FAQ")
-        embed.description = "```md 1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```"
+        embed.description = "``` 1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```"
         await interaction.response.edit_message(embed=embed)
 
     @discord.ui.button(label = "Help", style=discord.ButtonStyle.gray)

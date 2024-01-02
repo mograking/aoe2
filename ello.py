@@ -1,8 +1,8 @@
-import modules.aoe2records as a2r
 import modules.helpUI as help
 import modules.taunts as taunts
 import modules.bracket as bracket
 import modules.lobbyLinks as links
+import modules.search as search
 import modules.stats as stats
 
 import os
@@ -23,6 +23,9 @@ async def on_message(message):
     if len(message.content) > 250 or message.author.bot:
         return
 
+    if message.content == '-ping':
+        await message.channel.send('pong-')
+
     if bracket.isCommand(message):
         await bracket.respond(message)
 
@@ -35,7 +38,7 @@ async def on_message(message):
     if help.isCommand(message):
         await help.respond(message)
 
-    if a2r.isCommand(message):
-        await a2r.respond(message)
+    if search.isCommand(message):
+        await search.respond(message)
 
 client.run(os.getenv('DISCORD_TOKEN'))

@@ -65,16 +65,18 @@ class StatsMenu(discord.ui.View):
             await interaction.response.edit_message(embed=embed)
             return
         lastMatch = jdata['matches'][0]
+        victory=False
+        alias=""
         embed.add_field(name="Map", value=lastMatch['mapName'],inline=True)
         embed.add_field(name="Ladder", value=lastMatch['leaderboardId'],inline=True)
-        embed.add_field(name="Mode", value=lastMatch['gameModeName'],inline=False)
-        embed.set_image(url=lastMatch['mapImageUrl'])
-        team_index = 0
         for team_ in lastMatch['teams']:
-            embed.add_field(name="Team", value=str(team_index), inline=False)
-            team_index += 1
+            embed.add_field(name="Team", inline=False, value="")
             for player_ in team_["players"]:
-                embed.add_field(name=player_["name"], value="( {} ) {}".format(player_["rating"], player_["civName"]))
+                if player_['profileId'] == int(self.player['relicId']) :
+                    victory = player_['won']
+                    alias = player_['name']
+                embed.add_field(name="{}#{} [{}] as {}".format( player_['name'],player_['profileId'], player_["rating"], player_["civName"]), value="")
+        embed.description = "{}'s team {} this game".format(alias, 'won' if victory else 'lost')
         await interaction.response.edit_message(embed=embed)
 
 class FAQMenu(discord.ui.View):
@@ -83,7 +85,7 @@ class FAQMenu(discord.ui.View):
 
     @discord.ui.button(label="FAQ", style=discord.ButtonStyle.blurple)
     async def FAQBox(self, interaction, button):
-        await interaction.response.send_message("```md 1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```")
+        await interaction.response.send_message("```1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```")
 
 def displayStatsShort(discordId):
         embed = discord.Embed(title="AoE2 Profile")
@@ -130,7 +132,10 @@ def registerId( authorId, steamId=-1, relicId =-1, guildID=""):
     except KeyError as exc:
         status.code = -1
         return status
-    ella.update_one({ 'relicId' : str(relicId) }, {'$set' : {'steamId' : steamId, 'discordId' : authorId, 'name' : alias}, '$push':{'guildIds':guildID} }, upsert=True)
+    if ella.find_one({'discordId':authorId}):
+        ella.update_many({ 'discordId':authorId }, {'$set' : {'steamId' : steamId, 'relicId':str(relicId), 'name' : alias}, '$push':{'guildIds':guildID} })
+    else:   
+        ella.update_one({ 'relicId' : str(relicId) }, {'$set' : {'steamId' : steamId, 'discordId' : authorId, 'name' : alias}, '$push':{'guildIds':guildID} }, upsert=True)
     status.code = 1
     status.message = "Profile found : " + alias
     return status
@@ -143,24 +148,30 @@ def isCommand(message):
 
 async def respond(message):
     if message.content.startswith('!steamid') or message.content.startswith("-steamid"):
-        steamId= regexGetId(message.content)
         status = StatusCode()
-        if message.mentions:
-            status = registerId( message.mentions[0].id, steamId =steamId,  guildID = str(message.guild.id) )
-        else:
-            status = registerId( message.author.id, steamId =steamId, guildID = str(message.guild.id) ) 
+        try:
+            steamId= regexGetId(message.content)
+            if message.mentions:
+                status = registerId( message.mentions[0].id, steamId =steamId,  guildID = str(message.guild.id) )
+            else:
+                status = registerId( message.author.id, steamId =steamId, guildID = str(message.guild.id) ) 
+        except IndexError as exc:
+            status.code = -1
         if status.code == -1:
             await message.channel.send('Invalid', view=FAQMenu())
             return
         await message.channel.send(status.report())
 
     if message.content.startswith('!relicid') or message.content.startswith("-relicid"):
-        relicId= regexGetId(message.content)
         status = StatusCode()
-        if message.mentions:
-            status = registerId( message.mentions[0].id, relicId=relicId, guildID = str(message.guild.id) )
-        else:
-            status = registerId( message.author.id, relicId=relicId, guildID = str(message.guild.id) )
+        try:
+            relicId= regexGetId(message.content)
+            if message.mentions:
+                status = registerId( message.mentions[0].id, relicId=relicId, guildID = str(message.guild.id) )
+            else:
+                status = registerId( message.author.id, relicId=relicId, guildID = str(message.guild.id) )
+        except IndexError as exc:
+            status.code = -1
         if status.code == -1:
             await message.channel.send('Invalid', view=FAQMenu())
             return
