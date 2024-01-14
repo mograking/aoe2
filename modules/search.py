@@ -9,7 +9,8 @@ def isCommand(message):
     return message.content.startswith('-search')
 
 async def respond(message):
-    aliasPartial = ''.join(message.content.split(' ')[1:])
+    aliasPartial = ' '.join(message.content.split(' ')[1:])
+    resultText =''
     r = []
     try:
         r= requests.get(apis_.aoe2companionSearchrm1v1(aliasPartial)).json()
@@ -19,7 +20,7 @@ async def respond(message):
         count = 2
         for x in r['players']:
             count -= 1
-            await message.channel.send('{} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId']))
+            resultText += '\n {} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId'])
             if not count:
                 break
     except IndexError as exc:
@@ -34,7 +35,7 @@ async def respond(message):
         count = 2
         for x in r['players']:
             count -= 1
-            await message.channel.send('{} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId']))
+            resultText += '\n {} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId'])
             if not count:
                 break
     except IndexError as exc:
@@ -49,8 +50,12 @@ async def respond(message):
         count = 2
         for x in r['players']:
             count -= 1
-            await message.channel.send('{} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId']))
+            resultText += '\n {} {} {} #{}'.format(x['leaderboardId'], x['name'], x['rating'], x['profileId'])
             if not count:
                 break
     except IndexError as exc:
+        pass
+    try:
+        await message.channel.send("```{}```".format(resultText))
+    except Exception as exc:
         pass

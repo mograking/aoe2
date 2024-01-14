@@ -4,6 +4,7 @@ import modules.bracket as bracket
 import modules.lobbyLinks as links
 import modules.search as search
 import modules.stats as stats
+import modules.civilizations as civs
 
 import os
 import discord
@@ -40,5 +41,8 @@ async def on_message(message):
 
     if search.isCommand(message):
         await search.respond(message)
+
+    if civs.isCommand(message):
+        await civs.respond(message)
 
 client.run(os.getenv('DISCORD_TOKEN'))
