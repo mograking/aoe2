@@ -3,8 +3,8 @@ import json
 import re
 import requests
 import apis_
-import discord
 import pandas as pd
+import discord
 
 import os
 from dotenv import load_dotenv
@@ -39,6 +39,24 @@ def createNameELOList(dbResponse):
 def getELOTableBracket(guild_id, minElo=0, maxElo=3000):
     return [ ('-1' if 'name' not in x else x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in ella.find({'discordId':{'$exists':'true'},'maxElo' :{'$ne' : 0} , 'relicId':{'$exists':'true'}, 'guildIds': {'$in' : [guild_id]}, 'elo' :{'$gte':minElo,'$lte':maxElo}}).sort('elo',-1) ]
 
+def getStats(listOfRelicIds):
+    try:
+        r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(listOfRelicIds))).json()
+    except json.decoder.JSONDecodeError as exc:
+        return
+    statsTable= []
+
+    if r['result']['message'] == 'SUCCESS':
+        statG2relicId =dict()
+        statG2name =dict()
+        for x in r['statGroups']:
+            statG2relicId[x['id']] = str(x['members'][0]['profile_id'])
+            statG2name[x['id']] = str(x['members'][0]['alias'])
+        for x in r['leaderboardStats']:
+            if x['leaderboard_id'] == 3:
+                statsTable += [ {'name':statG2name[x['statgroup_id']], 'elo' : x['rating'], 'maxElo':x['highestrating']} ]
+    return statsTable
+
 def updatePersonalStatsGuildWise(guildId):
     list_of_relicIds = [ i['relicId'] for i in ella.find({'guildIds' : {'$in':[guildId]}}) ]
     try:
@@ -62,6 +80,13 @@ def isCommand(message):
 async def respond(message):
         if not message.guild:
             return
+
+        listOfRelicId=[]
+        for member in message.guild.members:
+            x = ella.find_one({'discordId':member.id})
+            if x : 
+                listOfRelicId += [ x['relicId'] ]
+
         for member in message.guild.members:
             if ella.find_one({'discordId':member.id, 'guildIds' :{'$nin' : [str(message.guild.id)]}} ) :
                 ella.update_one({'discordId':member.id}, {'$push':{ 'guildIds':str(message.guild.id)} })
@@ -85,7 +110,8 @@ async def respond(message):
             else:
                 minELO, maxELO = [int(x) for x in limits]
         updatePersonalStatsGuildWise(str(message.guild.id))
-        dbResponse = getPlayerDataGuild(str(message.guild.id), minElo=minELO, maxElo=maxELO)
+        #dbResponse = getPlayerDataGuild(str(message.guild.id), minElo=minELO, maxElo=maxELO)
+        dbResponse= sorted(getStats(listOfRelicId), key= lambda x: x['elo'], reverse=True)
         df = pd.DataFrame(createNameELOList(dbResponse), columns=['Alias','Current-Highest'])
         #df = pd.DataFrame(getELOTableBracket(str(message.guild.id),minElo=minELO,maxElo=maxELO), columns=['Alias','Current-Highest'])
         df.index+=1
@@ -100,4 +126,4 @@ async def respond(message):
             try:
                 await message.channel.send("```\n{}\n```".format(mdtext), view=FAQMenu())
             except discord.errors.HTTPException as exc:
-                await message.channel.send("```Too many members. Discord message limit exceeded.```", view=FAQMenu())
+                await message.channel.send("```Too many members. Discord message limit exceeded. Try -bracket 900 1000.```", view=FAQMenu())
