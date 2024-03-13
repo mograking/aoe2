@@ -1,22 +1,24 @@
 import requests
+import sqlite3
 import re
 import json
 import discord
 import apis_
 import os
 from dotenv import load_dotenv
-from pymongo import MongoClient
 load_dotenv()
 
-dbclient = MongoClient(os.getenv('LOCALMONGOURI'), int(os.getenv('LOCALMONGOPORT')))
-ella = dbclient.aoe2bot.ella
+sqlc =sqlite3.connect('discordToAoe.db') 
+cr = sqlc.cursor()
 
 class StatsMenu(discord.ui.View):
     def __init__(self, discordId):
         super().__init__()
         self.value=None
         self.discordId=discordId
-        self.player = ella.find_one({'discordId':discordId})
+        self.player = {}
+        res = cr.execute('select * from d2a where discordid={};'.format(discordId)).fetchall()
+        self.player['relicId'] = res[0][1]
 
     @discord.ui.button(label="Detailed", style=discord.ButtonStyle.blurple)
     async def personalStats(self, interaction, button):
@@ -88,12 +90,15 @@ class FAQMenu(discord.ui.View):
         await interaction.response.send_message("```1. For relic id, don't use aoe2insights. Use aoe2recs or aoe2companion instead.\n2. To find your steam id, look under Account Details on your steam page. It's a long long integer.```")
 
 def displayStatsShort(discordId):
-        embed = discord.Embed(title="AoE2 Profile")
-        player = ella.find_one({'discordId':discordId})
-        if not player:
+        player = {}
+        res = cr.execute('select * from d2a where discordid={};'.format(discordId)).fetchall()
+        try: 
+            player['relicId'] = res[0][1]
+        except (KeyError,IndexError) as exc:
             embed.description = "Invalid ID?"
             embed.add_field(name="Set your AoE profile", value="*-steamid <your steam id>* or *-relicid <link to your aoe2recs or aoe2companion profile>*", inline=False)
             return embed
+        embed = discord.Embed(title="AoE2 Profile")
         jdata = requests.get(apis_.aoe2companionProfile(player['relicId'])).json()
         if 'profileId' not in jdata:
             embed.description = "Invalid ID?"
@@ -132,10 +137,10 @@ def registerId( authorId, steamId=-1, relicId =-1, guildID=""):
     except KeyError as exc:
         status.code = -1
         return status
-    if ella.find_one({'discordId':authorId}):
-        ella.update_many({ 'discordId':authorId }, {'$set' : {'steamId' : steamId, 'relicId':str(relicId), 'name' : alias}, '$push':{'guildIds':guildID} })
-    else:   
-        ella.update_one({ 'relicId' : str(relicId) }, {'$set' : {'steamId' : steamId, 'discordId' : authorId, 'name' : alias}, '$push':{'guildIds':guildID} }, upsert=True)
+
+    cr.execute('insert into d2a values( {} , {} ) on conflict(discordid) do update set aoe2id={};'.format(int(authorId), int(relicId), int(relicId)))
+    sqlc.commit()
+    
     status.code = 1
     status.message = "Profile found : " + alias
     return status
@@ -186,6 +191,9 @@ async def respond(message):
         return
 
     if message.content.startswith('!stats') or message.content.startswith("-stats"):
+        res  = cr.execute('select * from d2a where discordid={};'.format(message.author.id)).fetchall()
+        if len(res) == 0:
+            await message.channel.send('Id not set. See Stats under -help')
         if len(message.mentions)>0:
             await message.channel.send(view=StatsMenu(message.mentions[0].id), embed=displayStatsShort(message.mentions[0].id))
         else: 

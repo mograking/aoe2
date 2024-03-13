@@ -19,7 +19,7 @@ async def on_ready():
 async def on_message(message):
     if len(message.content) > 250 or message.author.bot:
         return
-    if message.content.startswith('-rmciv '):
+    if message.content.startswith('-rmrole '):
         if not message.role_mentions:
             await message.channel.send('Mention the role you want to remove')
             return
@@ -30,7 +30,7 @@ async def on_message(message):
         await message.author.remove_roles(roleX, reason="You did this to yourself")
         await message.channel.send('Role remove! ... Probably. Use -setciv @Role to set roles.')
 
-    if message.content.startswith('-setciv '):
+    if message.content.startswith('-setrole '):
         if not message.role_mentions:
             await message.channel.send('Mention the role you want to set')
             return
