@@ -20,11 +20,12 @@ class helpMenu(discord.ui.View):
         await interaction.response.edit_message(embed=embed)
 
 
-    @discord.ui.button(label = "Bracket leaderboard", style=discord.ButtonStyle.red)
+    @discord.ui.button(label = "Leaderboard", style=discord.ButtonStyle.red)
     async def viewGuildLeaderboard(self,interaction, button): 
-        embed = discord.Embed(title="Manual: Bracket leaderboard")
-        embed.add_field(name="Note", value="Channel name must be *number*-*number* or lt-*number* or gt-*number*. '*number*' must be between 0 and 3000.",inline=False)
-        embed.add_field(name="View", value="*-bracket*" )
+        embed = discord.Embed(title="Manual: Leaderboard")
+        embed.add_field(name="Note", value="",inline=False)
+        embed.add_field(name="View", value="**-ranked** or **-teamranked**" )
+        embed.add_field(name="Limited range", value="**-ranked 900 1000** or **-teamranked 800 1400**" )
         embed.add_field(name="Add/Remove", value="See manual for *-stats*", inline=False)
         await interaction.response.edit_message(embed=embed)
 

@@ -20,3 +20,7 @@ def aoe2companionSearchrmteam(alias_partial):
 def aoe2companionSearchunranked(alias_partial):
     return 'https://data.aoe2companion.com/api/leaderboards/unranked?search={}'.format(alias_partial)
     
+
+def aoe2companionSearchNew(alias_partial):
+    return 'https://data.aoe2companion.com/api/profiles?search={}&page=1'.format(alias_partial)
+

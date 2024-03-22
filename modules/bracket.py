@@ -34,7 +34,8 @@ def createELONameList(dbResponse):
 def createNameELOList(dbResponse):
     return [ (x['name'], "{}-{}".format(x['elo'],x['maxElo']) ) for x in dbResponse ]
 
-def getStats(listOfRelicIds):
+def getStats(listOfRelicIds, leaderboard="1v1"):
+    leaderboardId = 3 if leaderboard == "1v1" else 4
     try:
         r= requests.get(apis_.relicLinkPersonalStatsRelic("\",\"".join(listOfRelicIds))).json()
     except json.decoder.JSONDecodeError as exc:
@@ -48,17 +49,21 @@ def getStats(listOfRelicIds):
             statG2relicId[x['id']] = str(x['members'][0]['profile_id'])
             statG2name[x['id']] = str(x['members'][0]['alias'])
         for x in r['leaderboardStats']:
-            if x['leaderboard_id'] == 3:
+            if x['leaderboard_id'] == leaderboardId:
                 statsTable += [ {'name':statG2name[x['statgroup_id']], 'elo' : x['rating'], 'maxElo':x['highestrating']} ]
     return statsTable
 
 
 def isCommand(message):
-    return message.content.startswith('-bracket')
+    return message.content.startswith('-bracket') or message.content.startswith('-ranked') or message.content.startswith('-teamranked')
 
 async def respond(message):
         if not message.guild:
             return
+        if message.content.startswith('-bracket') or message.content.startswith('-ranked'):
+            leaderboard="1v1"
+        elif message.content.startswith('-teamranked'):
+            leaderboard="team"
 
 
         if type(message.channel) is not discord.TextChannel and type(message.channel) is not discord.Thread:
@@ -88,17 +93,17 @@ async def respond(message):
             else:
                 minELO, maxELO = [int(x) for x in limits]
         print(minELO, maxELO)
-        dbResponse= sorted(filter(lambda x : x['elo']>minELO and x['elo']<maxELO, getStats(listOfRelicId)), key= lambda x: x['elo'], reverse=True)
+        dbResponse= sorted(filter(lambda x : x['elo']>minELO and x['elo']<maxELO, getStats(listOfRelicId, leaderboard=leaderboard)), key= lambda x: x['elo'], reverse=True)
         df = pd.DataFrame(createNameELOList(dbResponse), columns=['Alias','Current-Highest'])
         df.index+=1
         try:
-            await message.channel.send("```\n{}\n```".format(df.to_markdown()) , view =FAQMenu())
+            await message.channel.send("Leaderboard=**{}** \n ```\n{}\n```".format(leaderboard, df.to_markdown()) , view =FAQMenu())
         except discord.errors.HTTPException as exc:
             df = pd.DataFrame(createELONameList(dbResponse), columns=['ELO','Alias'])
             df.index += 1
             mdtext = df.to_markdown(tablefmt="plain")
             mdtext = leftTrimEachLine(mdtext)
             try:
-                await message.channel.send("```\n{}\n```".format(mdtext), view=FAQMenu())
+                await message.channel.send("Leaderboard=**{}** \n```\n{}\n```".format(leaderboard, mdtext), view=FAQMenu())
             except discord.errors.HTTPException as exc:
-                await message.channel.send("```Too many members. Discord message limit exceeded. Try -bracket 900 1000.```", view=FAQMenu())
+                await message.channel.send("```Too many members. Discord message limit exceeded. Try a limited request like -ranked 900 1000 or -teamranked 500 1000```", view=FAQMenu())
