@@ -53,4 +53,4 @@ Thank you for choosing Ello for your Age of Empires 2 Discord community. Enjoy g
 
 ![User using Ello to look up someone's stats](https://imgur.com/a/vSCIlv8)
 
-![User searching a name](https://imgur.com/hJmK5yg)
+[https://imgur.com/hJmK5yg](https://i.imgur.com/hJmK5yg.png)
