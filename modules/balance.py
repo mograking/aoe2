@@ -49,9 +49,12 @@ def norm_1(rating) :
 def norm_2(rating):
     return math.ceil( math.exp( max(rating-500, 500)/1000 )*1000)
 
+def norm_3(rating):
+    return math.ceil( math.exp( (rating-1000)/1000 )*1000)
+
 
 def normalize(rating):
-    return norm_2(rating)
+    return norm_3(rating)
 
 def isCommand(message):
     return message.content.startswith('-balance')
