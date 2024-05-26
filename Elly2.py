@@ -19,6 +19,13 @@ async def on_ready():
 async def on_message(message):
     if len(message.content) > 250 or message.author.bot:
         return
+    if message.content.startswith('-test'):
+        async for x in message.guild.fetch_members():
+            if not x.bot:
+                async for y in x.history(limit=1, oldest_first=True):
+                    print('{} : {}'.format(x.display_name, y.created_at))
+
+
     if message.content.startswith('-rmrole '):
         if not message.role_mentions:
             await message.channel.send('Mention the role you want to remove')
@@ -28,7 +35,7 @@ async def on_message(message):
             await message.channel.send('That role is not assignable')
             return
         await message.author.remove_roles(roleX, reason="You did this to yourself")
-        await message.channel.send('Role remove! ... Probably. Use -setciv @Role to set roles.')
+        await message.channel.send('Role remove! ... Probably. Use -setrole @Role to set roles.')
 
     if message.content.startswith('-setrole '):
         if not message.role_mentions:
@@ -39,7 +46,7 @@ async def on_message(message):
             await message.channel.send('That role is not assignable')
             return
         await message.author.add_roles(roleX, reason="You did this to yourself")
-        await message.channel.send('Role set! ... Probably. Use -rmciv @Role to remove the role.')
+        await message.channel.send('Role set! ... Probably. Use -rmrole @Role to remove the role.')
 
 
 client.run(TOKEN)

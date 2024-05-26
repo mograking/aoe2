@@ -1,4 +1,3 @@
-
 import json
 import sqlite3
 import re
@@ -21,7 +20,7 @@ class FAQMenu(discord.ui.View):
 
     @discord.ui.button(label="FAQ", style=discord.ButtonStyle.blurple)
     async def FAQBox(self, interaction, button):
-        await interaction.response.send_message("```1. Usage: '-bracket' or '-bracket minELO maxELO'. For example '-bracket 1000 1200'.\n2. To add yourself to this list, see Stats under '-help'. \n```")
+        await interaction.response.send_message("```1. Use '-ranked 1000 1050' or '-teamranked 900 1000'.\n 2. See -help to add yourself to the list```")
 
 
 def leftTrimEachLine(text):
