@@ -19,6 +19,8 @@ client = discord.Client(intents=discord.Intents.all())
 COUNT_BOT_ID=510016054391734273 
 COUNT_CHANNEL_ID=1230924192640405646 
 COUNT_VERIFIED_EMOJI='✅'
+ACCEPTED_COUNT_EMOJIS=[ '✔️', '✅', '☑️', '🗸', '🗹', '💯' ] 
+
 
 @client.event
 async def on_ready():
@@ -27,7 +29,7 @@ async def on_ready():
 
 @client.event
 async def on_raw_reaction_add(payload):
-    if payload.channel_id == COUNT_CHANNEL_ID and payload.user_id == COUNT_BOT_ID and payload.emoji.name == COUNT_VERIFIED_EMOJI:
+    if payload.channel_id == COUNT_CHANNEL_ID and payload.user_id == COUNT_BOT_ID and payload.emoji.name in ACCEPTED_COUNT_EMOJIS : 
         message = await (await client.fetch_channel(COUNT_CHANNEL_ID)).fetch_message(payload.message_id)
         response = await countscore.apply_score(message)
         await message.channel.send('{} {} {}'.format(response[0],response[1],response[2]))
